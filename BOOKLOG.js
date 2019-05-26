@@ -2,9 +2,6 @@ var num13 = '';
 var toDay = '';
 var pageNo = 1;
 const pageCnt = 12;
-function func_Init() {
-  setList();
-}
 function setList() {
   var cn = new ActiveXObject('ADODB.Connection');
   var rs = new ActiveXObject('ADODB.Recordset');
@@ -277,48 +274,32 @@ function toLocaleString( date ) {
         ].join( '/' );
 }
 function inpCheck () {
-  if (num13 == '') { alert('ISBNコードは、必須入力項目です！');
-   $('#inIsbn13').focus();
-   $('#inIsbn13').style.backgroundColor = 'mistyrose';
-   return;
-  }
   $('#inIsbn13').css('backgroundColor','#FFFFFF');
-  if (getVal('inBookname') == 'null') { alert('書名は、必須入力項目です！'); 
-    $('#inBookname').focus();
-    $('#inBookname').css('backgroundColor','mistyrose');
-    return false;
-  }
   $('#inBookname').css('backgroundColor','#FFFFFF');
-  if ( !isDate($('#inIssuedate').val())) { alert('発行日の日付形式が正しくありません！ ' + getVal('inIssuedate'));
-    $('#inIssuedate').focus();
-    $('#inIssuedate').css('backgroundColor','mistyrose');
-    return false;
-  }
   $('#inIssuedate').css('backgroundColor','#FFFFFF');
-  if (getVal('inGetdate') == 'null') { alert('入手日は、必須入力項目です！');
-    $('#inGetdate').focus();
-    $('#inGetdate').css('backgroundColor','mistyrose');
-    return false;
-  }
-  if ( !isDate($('#inGetdate').val())) { alert('入手日の日付形式が正しくありません！ ' + getVal('inGetdate'));
-    $('#inGetdate').focus();
-    $('#inGetdate').css('backgroundColor','mistyrose');
-    return false;
-  }
   $('#inGetdate').css('backgroundColor','#FFFFFF');
-  if ( !isDate($('#inReaddate').val())) { alert('読了日の日付形式が正しくありません！ ' + getVal('inReaddate'));
-    $('#inReaddate').focus();
-    $('#inReaddate').css('backgroundColor','mistyrose');
-    return false;
-  }
   $('#inReaddate').css('backgroundColor','#FFFFFF');
-  if ( isNaN(getVal('inPurchase')) ) { alert('数値を入力してください！');
-    $('#inPurchase').focus();
-    $('#inPurchase').css('backgroundColor','mistyrose');
-    return false;
-  }
   $('#inPurchase').css('backgroundColor','#FFFFFF');
+  if (num13 == '') { return atError ( 'inIsbn13', '書名は、必須入力項目です！ '); }
+  if (getVal('inBookname') == 'null') { return atError ( 'inBookname', '書名は、必須入力項目です！ '); }
+  if ( !isDate($('#inIssuedate').val())) { 
+    return atError ( 'inIssuedate', '発行日の日付形式が正しくありません！ ' + getVal('inIssuedate'));
+  }
+  if (getVal('inGetdate') == 'null') { return atError ( 'inGetdate', '入手日は、必須入力項目です！'); }
+  if ( !isDate($('#inGetdate').val())) { 
+    return atError ( 'inGetdate', '入手日の日付形式が正しくありません！ ' + getVal('inGetdate'));
+  }
+  if ( !isDate($('#inReaddate').val())) { 
+    return atError ( 'inReaddate', '読了日の日付形式が正しくありません！ ' + getVal('inReaddate'));
+  }
+  if ( isNaN(getVal('inPurchase')) ) { return atError ( 'inPurchase', '数値を入力してください！'); }
   return true;
+}
+function atError ( str, msg ) {
+  alert(msg);
+  $('#' + str).focus();
+  $('#' + str).css('backgroundColor','mistyrose');
+  return false;
 }
 function isDate ( strDate ) {
   if (strDate == '') return true;
