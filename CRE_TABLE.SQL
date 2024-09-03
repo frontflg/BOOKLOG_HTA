@@ -13,7 +13,7 @@ CREATE TABLE `booklog` (
 	`library` VARCHAR(25) NULL DEFAULT NULL COLLATE 'utf16_unicode_520_ci',
 	`overview` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf16_unicode_520_ci',
 	`impressions` TEXT NULL DEFAULT NULL COLLATE 'utf16_unicode_520_ci',
-	`state` INT(10) NULL DEFAULT '0',
+	`state` VARCHAR(1) NULL DEFAULT '0',
 	`coverimg` VARCHAR(41) NULL DEFAULT NULL COLLATE 'utf16_unicode_520_ci',
 	PRIMARY KEY (`isbn13`)
 )
