@@ -2,16 +2,25 @@ var num13 = '';
 var toDay = '';
 var pageNo = 1;
 const pageCnt = 12;
+const tSchema = 'mysql_test.'; // ç’°å¢ƒã«åˆã‚ã›ã¦å¤‰ãˆã‚‹
+const tDatSrc ='Provider=MSDASQL; Data Source=Connector_MariaDB'; // ç’°å¢ƒã«åˆã‚ã›ã¦å¤‰ãˆã‚‹
+
 function setList() {
   var cn = new ActiveXObject('ADODB.Connection');
   var rs = new ActiveXObject('ADODB.Recordset');
-  var mySql = "SELECT isbn13,bookname,coverimg FROM booklog ORDER BY getdate DESC";
-  cn.Open(' Provider=MSDASQL; Data Source=BOOKLOG_MYSQL');
+  var mySql = "SELECT isbn13,bookname,substring(bookname,27) AS bookname2,"
+            + " isbn10,author,substring(author,13) AS author2,"
+            + " DATE_FORMAT(getdate,'%Y/%m/%d'),"
+            + " CASE WHEN state = 'äº†' THEN '2' WHEN state = 'ä¸­' THEN '1'"
+            + " ELSE '0' END AS state FROM " + tSchema
+            + "app_booklog ORDER BY getdate DESC";
+
+  cn.Open(tDatSrc);
   try {
     rs.Open(mySql, cn);
   } catch (e) {
     cn.Close();
-    alert('‘ÎÛƒe[ƒuƒ‹ŒŸõ•s”\' + (e.number & 0xFFFF) + ' ' + e.message + ' ' + mySql);
+    alert('å¯¾è±¡ãƒ†ãƒ¼ãƒ–ãƒ«æ¤œç´¢ä¸èƒ½' + (e.number & 0xFFFF) + ' ' + e.message + ' ' + mySql);
     return;
   }
   if (toDay == '') {
@@ -27,34 +36,56 @@ function setList() {
     $('#tabs').tabs( { active: 1} );
     return;
   }
+  var strNam = '';
+  var strAut = '';
   var strYMD = '';
   var strDoc = '';
+  var strDoc2 = '';
   var itemNo = 0;
   var colNo = 0;
   while (!rs.EOF){
     itemNo += 1;
+    strNam = rs(1).value.slice(0,26) + rs(2).value;
+    strAut = rs(4).value.slice(0,12) + rs(5).value;
+    strYMD = rs(6).value;
     if ((itemNo > (pageNo - 1) * pageCnt) && itemNo < (pageNo * pageCnt) + 1){
       colNo += 1;
       if (colNo == 1){ strDoc  += '<tr>'; }
       strDoc  += '<td><a href="#" onClick=updPage("'
-              + rs(0).value + '")><img src="https://images-na.ssl-images-amazon.com/images/I/'
-              + rs(2).value.substr(0,13) + 'AC_UL320_SR256,320_.jpg" width="170" '
-              + ' title="' + rs(1).value + '"></a></td>';
+              + rs(0).value + '")><img src="https://images-fe.ssl-images-amazon.com/images/P/'
+              + rs(3).value.substr(0,10) + '.09.LZZZZZZZ" height="244" width="170" '
+              + ' title="' + strNam + '"></a></td>';
       if (colNo == 6){
         strDoc  += '</tr>';
         colNo = 0;
       }
     }
+
+    strDoc2  += '<tr><td width="150px">';
+    strDoc2  += '<a href="#" onClick=updPage("' + rs(0).value + '")>' + rs(0).value + '</a></td>';
+    if (strYMD < '1970/01/01') { strYMD = ""; }
+    strDoc2 += '<td width="470px">' + strNam + '</td><td width="410px" style="word-break : break-all;">' + strAut + '</td>';
+    strDoc2 += '<td width="110px">' + strYMD + '</td>';
+    if (rs(7).value == '2') {
+       strDoc2 += '<td>èª­ã€€äº†</td></tr>';
+    } else if (rs(7).value == '1') {
+       strDoc2 += '<td>èª­æ›¸ä¸­</td></tr>';
+    } else {
+       strDoc2 += '<td>æœªã€€èª­</td></tr>';
+    }
+
     rs.MoveNext();
   }
   $('#lst01').replaceWith('<tbody id="lst01">' + strDoc + '</tbody>');
+  $('#lst02').replaceWith('<tbody id="lst02" style="overflow-y: scroll; height: 574px;">' + strDoc2 + '</tbody>');
+
   rs.Close();
   cn.Close();
   rs = null;
   cn = null;
   strDoc = '';
-  if (pageNo > 1){ strDoc = '<a href="#" onclick="befPage();">á‘O‚Ì' + pageCnt + 'Œ‚Ö</a>'; }
-  if (pageNo * pageCnt < itemNo){ strDoc += '@<a href="#" onclick="nextPage();">Ÿ‚Ì' + pageCnt + 'Œ‚Öâ</a>'; }  
+  if (pageNo > 1){ strDoc = '<a href="#" onclick="befPage();">â‰ªå‰ã®' + pageCnt + 'ä»¶ã¸</a>'; }
+  if (pageNo * pageCnt < itemNo){ strDoc += 'ã€€<a href="#" onclick="nextPage();">æ¬¡ã®' + pageCnt + 'ä»¶ã¸â‰«</a>'; }  
   if (strDoc != ''){ $('#footer').replaceWith('<div id="footer">' + strDoc + '</div>'); }  
   clrScr();
   $('#tabs').tabs( { active: 0} );
@@ -71,55 +102,63 @@ function updPage(uIsbn) {
   num13 = uIsbn;
   var cn = new ActiveXObject('ADODB.Connection');
   var rs = new ActiveXObject('ADODB.Recordset');
+  var strNam = '';
+  var strAut = '';
   var mySql = "SELECT DATE_FORMAT(getdate,'%Y/%m/%d'),"
             + "DATE_FORMAT(issuedate,'%Y/%m/%d'),"
             + "DATE_FORMAT(readdate,'%Y/%m/%d'),"
-            + "isbn13,isbn10,bookname,author,publisher,genre,ownership,"
-            + "purchase,library,overview,impressions,state,coverimg"
-            + " FROM booklog WHERE isbn13 = '" + num13 + "'";
-  cn.Open(' Provider=MSDASQL; Data Source=BOOKLOG_MYSQL');
+            + "isbn13,isbn10,bookname,substring(bookname,27) AS bookname2,"
+            + "author,substring(author,13) AS author2,"
+            + "publisher,genre,ownership,"
+            + "purchase,library,overview,impressions,"
+            + " CASE WHEN state = 'äº†' THEN '2' WHEN state = 'ä¸­' THEN '1'"
+            + " ELSE '0' END AS state,coverimg"
+            + " FROM " + tSchema + "app_booklog WHERE isbn13 = '" + num13 + "'";
+  cn.Open(tDatSrc);
   try {
     rs.Open(mySql, cn);
   } catch (e) {
     cn.Close();
-    document.write('‘ÎÛƒŒƒR[ƒhŒŸõ•s”\' + (e.number & 0xFFFF) + ' ' + e.message + ' ' + mySql);
-    alert('‘ÎÛƒŒƒR[ƒhŒŸõ•s”\');
+    document.write('å¯¾è±¡ãƒ¬ã‚³ãƒ¼ãƒ‰æ¤œç´¢ä¸èƒ½' + (e.number & 0xFFFF) + ' ' + e.message + ' ' + mySql);
+    alert('å¯¾è±¡ãƒ¬ã‚³ãƒ¼ãƒ‰æ¤œç´¢ä¸èƒ½');
     return;
   }
-  num13 = rs(3).value;
   if (!rs.EOF){
+    num13 = rs(3).value;
+    strNam = rs(5).value.slice(0,26) + rs(6).value;
+    strAut = rs(7).value.slice(0,12) + rs(8).value;
     $('#inIsbn13').val(num13);
     $('#inGetdate').val(rs(0).value);
     $('#inIssuedate').val(rs(1).value);
     $('#inReaddate').val(rs(2).value);
     $('#inIsbn10').val(rs(4).value);
     if (rs(4).value != null) {
-      $('#acIsbn10').replaceWith('<div id="acIsbn10"><a href="https://www.amazon.co.jp/dp/' + rs(4).value + '" target="_blank">ISBN10F</a></div>');
+      $('#acIsbn10').replaceWith('<div id="acIsbn10"><a href="https://www.amazon.co.jp/dp/' + rs(4).value + '" target="_blank">ISBN10ï¼š</a></div>');
     } else {
-      $('#acIsbn10').replaceWith('<div id="acIsbn10"><a href="https://www.amazon.co.jp/dp/" target="_blank">ISBN10F</a></div>');
+      $('#acIsbn10').replaceWith('<div id="acIsbn10"><a href="https://www.amazon.co.jp/dp/" target="_blank">ISBN10ï¼š</a></div>');
     }
-    $('#inBookname').val(rs(5).value);
-    $('#inAuthor').val(rs(6).value);
-    $('#inPublisher').val(rs(7).value);
-    $('#inGenre').val(rs(8).value);
-    if (rs(9).value == 0) {
+    $('#inBookname').val(strNam);
+    $('#inAuthor').val(strAut);
+    $('#inPublisher').val(rs(9).value);
+    $('#inGenre').val(rs(10).value);
+    if (rs(11).value == 0) {
       $('input[name=inOwnership]:eq(1)').prop('checked', true);
     } else {
       $('input[name=inOwnership]:eq(0)').prop('checked', true);
     }
-    $('#inPurchase').val(rs(10).value);
-    $('#inLibrary').val(rs(11).value);
-    $('#inOverview').val(rs(12).value);
-    $('#inImpressions').val(rs(13).value);
-    $('#inState').val(rs(14).value);
-    $('#inCoverimg').val(rs(15).value);
-    if (rs(15).value != null) {
-      $('#scrImage').replaceWith('<div id="scrImage"><img src="https://images-na.ssl-images-amazon.com/images/I/' + rs(15).value + '" align="center" width="275"></div>');
+    $('#inPurchase').val(rs(12).value);
+    $('#inLibrary').val(rs(13).value);
+    $('#inOverview').val(rs(14).value);
+    $('#inImpressions').val(rs(15).value);
+    $('#inState').val(rs(16).value);
+    $('#inCoverimg').val(rs(17).value);
+    if (rs(4).value != null) {
+      $('#scrImage').replaceWith('<div id="scrImage"><img src="https://images-fe.ssl-images-amazon.com/images/P/' + rs(4).value + '.09.LZZZZZZZ" align="center" width="275"></div>');
     } else {
-      $('#scrImage').replaceWith('<div id="scrImage">•\†ƒCƒ[ƒW‚È‚µ</div>');
+      $('#scrImage').replaceWith('<div id="scrImage">è¡¨ç´™ã‚¤ãƒ¡ãƒ¼ã‚¸ãªã—</div>');
     }
   }
-  $('#lbl02').replaceWith('<div id="lbl02">Ú×</div>');
+  $('#lbl02').replaceWith('<div id="lbl02">è©³ç´°</div>');
   rs.Close();
   cn.Close();
   rs = null;
@@ -129,15 +168,15 @@ function updPage(uIsbn) {
   $('#delete').show();
   $('#clear').show();
   $('#inIsbn13').prop('disabled', true);
-  $('#tabs').tabs( { active: 1} );
+  $('#tabs').tabs( { active: 2} );
 }
 function updRec() {
-  if (num13 == '') { alert('ISBNƒR[ƒh‚ªAƒZƒbƒg‚³‚ê‚Ä‚¢‚Ü‚¹‚ñI'); return; }
+  if (num13 == '') { alert('ISBNã‚³ãƒ¼ãƒ‰ãŒã€ã‚»ãƒƒãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ï¼'); return; }
   if ( !inpCheck() ) { return; }
   var cn = new ActiveXObject('ADODB.Connection');
   var rs = new ActiveXObject('ADODB.Recordset');
-  cn.Open(' Provider=MSDASQL; Data Source=BOOKLOG_MYSQL');
-  var mySql = "UPDATE booklog SET ";
+  cn.Open(tDatSrc);
+  var mySql = "UPDATE " + tSchema + "app_booklog SET ";
   mySql +=  "isbn10 = "      + getVal('inIsbn10');
   mySql += ",bookname = "    + getVal('inBookname');
   mySql += ",author = "      + getVal('inAuthor');
@@ -155,15 +194,21 @@ function updRec() {
   mySql += ",library = "     + getVal('inLibrary');
   mySql += ",overview = "    + getVal('inOverview');
   mySql += ",impressions = " + getVal('inImpressions');
-  mySql += ",state = "       + getVal('inState');
+  if (getVal('inState') == '2') {
+    mySql += ",state = 'äº†'";
+  } else if (getVal('inState') == '1') {
+    mySql += ",state = 'ä¸­'";
+  } else {
+    mySql += ",state = 'æœª'";
+  }
   mySql += ",coverimg = "    + getVal('inCoverimg');
   mySql += " WHERE isbn13 = '" + num13 + "'";
   try {
     var rs = cn.Execute(mySql);
-    alert('‘ÎÛƒŒƒR[ƒhXVŠ®—¹');
+    alert('å¯¾è±¡ãƒ¬ã‚³ãƒ¼ãƒ‰æ›´æ–°å®Œäº†');
   } catch (e) {
     cn.Close();
-    alert('‘ÎÛƒŒƒR[ƒhXV¸”s ' + (e.number & 0xFFFF) + ' ' + e.message + ' ' + mySql);
+    alert('å¯¾è±¡ãƒ¬ã‚³ãƒ¼ãƒ‰æ›´æ–°å¤±æ•— ' + (e.number & 0xFFFF) + ' ' + e.message + ' ' + mySql);
     return;
   }
   cn.Close();
@@ -176,8 +221,8 @@ function insRec() {
   if ( !inpCheck() ) { return; }
   var cn = new ActiveXObject('ADODB.Connection');
   var rs = new ActiveXObject('ADODB.Recordset');
-  cn.Open(' Provider=MSDASQL; Data Source=BOOKLOG_MYSQL');
-  var mySql  = "INSERT INTO booklog(isbn13,isbn10,bookname,author,publisher,genre,";
+  cn.Open(tDatSrc);
+  var mySql  = "INSERT INTO " + tSchema + "app_booklog(isbn13,isbn10,bookname,author,publisher,genre,";
   mySql += "issuedate,getdate,readdate,ownership,purchase,library,overview,impressions,state,coverimg)";
   mySql += " VALUES(";
   mySql += "'" + num13 + "'";
@@ -198,18 +243,24 @@ function insRec() {
   mySql += "," + getVal('inLibrary');
   mySql += "," + getVal('inOverview');
   mySql += "," + getVal('inImpressions');
-  mySql += "," + getVal('inState');
+  if (getVal('inState') == '2') {
+    mySql += ",'äº†'";
+  } else if (getVal('inState') == '1') {
+    mySql += ",'ä¸­'";
+  } else {
+    mySql += ",'æœª'";
+  }
   mySql += "," + getVal('inCoverimg') + ")";
   try {
     var rs   = cn.Execute(mySql);
-    alert('‘ÎÛƒŒƒR[ƒh“o˜^Š®—¹');
+    alert('å¯¾è±¡ãƒ¬ã‚³ãƒ¼ãƒ‰ç™»éŒ²å®Œäº†');
   } catch (e) {
     cn.Close();
     if ((e.number & 0xFFFF) == '3604') {
-      alert('‘ÎÛƒŒƒR[ƒh‚ÍAŠù‚É“o˜^‚³‚ê‚Ä‚¢‚Ü‚·B');
+      alert('å¯¾è±¡ãƒ¬ã‚³ãƒ¼ãƒ‰ã¯ã€æ—¢ã«ç™»éŒ²ã•ã‚Œã¦ã„ã¾ã™ã€‚');
       updPage(num13);
     } else {
-      alert('‘ÎÛƒŒƒR[ƒh“o˜^¸”s ' + (e.number & 0xFFFF) + ' ' + e.message + ' ' + mySql);
+      alert('å¯¾è±¡ãƒ¬ã‚³ãƒ¼ãƒ‰ç™»éŒ²å¤±æ•— ' + (e.number & 0xFFFF) + ' ' + e.message + ' ' + mySql);
     }
     return;
   }
@@ -240,25 +291,25 @@ function clrScr() {
   $('#delete').hide();
   $('#clear').hide();
   $('#inIsbn13').prop('disabled', false);
-  $('#lbl02').replaceWith('<div id="lbl02">V‹K</div>');
+  $('#lbl02').replaceWith('<div id="lbl02">æ–°è¦</div>');
 }
 function delRec() {
-  if (num13 == '') { alert('ISBNƒR[ƒh‚ªƒZƒbƒg‚³‚ê‚Ä‚¢‚Ü‚¹‚ñI'); return; }
+  if (num13 == '') { alert('ISBNã‚³ãƒ¼ãƒ‰ãŒã‚»ãƒƒãƒˆã•ã‚Œã¦ã„ã¾ã›ã‚“ï¼'); return; }
   var cn = new ActiveXObject('ADODB.Connection');
-  if( confirm('–{“–‚Éíœ‚µ‚Ü‚·‚©H')) {
+  if( confirm('æœ¬å½“ã«å‰Šé™¤ã—ã¾ã™ã‹ï¼Ÿ')) {
   } else {
-    alert('íœƒLƒƒƒ“ƒZƒ‹‚µ‚Ü‚µ‚½I');
+    alert('å‰Šé™¤ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã—ã¾ã—ãŸï¼');
     return;
   }
   var rs = new ActiveXObject('ADODB.Recordset');
-  cn.Open(' Provider=MSDASQL; Data Source=BOOKLOG_MYSQL');
-  var mySql = "DELETE FROM booklog WHERE isbn13 = '" + num13 + "'";
+  cn.Open(tDatSrc);
+  var mySql = "DELETE FROM " + tSchema + "app_booklog WHERE isbn13 = '" + num13 + "'";
   try {
     var rs = cn.Execute(mySql);
-    alert('‘ÎÛƒŒƒR[ƒhíœŠ®—¹');
+    alert('å¯¾è±¡ãƒ¬ã‚³ãƒ¼ãƒ‰å‰Šé™¤å®Œäº†');
   } catch (e) {
     cn.Close();
-    alert('‘ÎÛƒŒƒR[ƒhíœ¸”s ' + (e.number & 0xFFFF) + ' ' + e.message + ' ' + mySql);
+    alert('å¯¾è±¡ãƒ¬ã‚³ãƒ¼ãƒ‰å‰Šé™¤å¤±æ•— ' + (e.number & 0xFFFF) + ' ' + e.message + ' ' + mySql);
     return;
   }
   cn.Close();
@@ -280,19 +331,19 @@ function inpCheck () {
   $('#inGetdate').css('backgroundColor','#FFFFFF');
   $('#inReaddate').css('backgroundColor','#FFFFFF');
   $('#inPurchase').css('backgroundColor','#FFFFFF');
-  if (num13 == '') { return atError ( 'inIsbn13', '‘–¼‚ÍA•K{“ü—Í€–Ú‚Å‚·I '); }
-  if (getVal('inBookname') == 'null') { return atError ( 'inBookname', '‘–¼‚ÍA•K{“ü—Í€–Ú‚Å‚·I '); }
+  if (num13 == '') { return atError ( 'inIsbn13', 'æ›¸åã¯ã€å¿…é ˆå…¥åŠ›é …ç›®ã§ã™ï¼ '); }
+  if (getVal('inBookname') == 'null') { return atError ( 'inBookname', 'æ›¸åã¯ã€å¿…é ˆå…¥åŠ›é …ç›®ã§ã™ï¼ '); }
   if ( !isDate($('#inIssuedate').val())) { 
-    return atError ( 'inIssuedate', '”­s“ú‚Ì“ú•tŒ`®‚ª³‚µ‚­‚ ‚è‚Ü‚¹‚ñI ' + getVal('inIssuedate'));
+    return atError ( 'inIssuedate', 'ç™ºè¡Œæ—¥ã®æ—¥ä»˜å½¢å¼ãŒæ­£ã—ãã‚ã‚Šã¾ã›ã‚“ï¼ ' + getVal('inIssuedate'));
   }
-  if (getVal('inGetdate') == 'null') { return atError ( 'inGetdate', '“üè“ú‚ÍA•K{“ü—Í€–Ú‚Å‚·I'); }
+  if (getVal('inGetdate') == 'null') { return atError ( 'inGetdate', 'å…¥æ‰‹æ—¥ã¯ã€å¿…é ˆå…¥åŠ›é …ç›®ã§ã™ï¼'); }
   if ( !isDate($('#inGetdate').val())) { 
-    return atError ( 'inGetdate', '“üè“ú‚Ì“ú•tŒ`®‚ª³‚µ‚­‚ ‚è‚Ü‚¹‚ñI ' + getVal('inGetdate'));
+    return atError ( 'inGetdate', 'å…¥æ‰‹æ—¥ã®æ—¥ä»˜å½¢å¼ãŒæ­£ã—ãã‚ã‚Šã¾ã›ã‚“ï¼ ' + getVal('inGetdate'));
   }
   if ( !isDate($('#inReaddate').val())) { 
-    return atError ( 'inReaddate', '“Ç—¹“ú‚Ì“ú•tŒ`®‚ª³‚µ‚­‚ ‚è‚Ü‚¹‚ñI ' + getVal('inReaddate'));
+    return atError ( 'inReaddate', 'èª­äº†æ—¥ã®æ—¥ä»˜å½¢å¼ãŒæ­£ã—ãã‚ã‚Šã¾ã›ã‚“ï¼ ' + getVal('inReaddate'));
   }
-  if ( isNaN(getVal('inPurchase')) ) { return atError ( 'inPurchase', '”’l‚ğ“ü—Í‚µ‚Ä‚­‚¾‚³‚¢I'); }
+  if ( isNaN(getVal('inPurchase')) ) { return atError ( 'inPurchase', 'æ•°å€¤ã‚’å…¥åŠ›ã—ã¦ãã ã•ã„ï¼'); }
   return true;
 }
 function atError ( str, msg ) {
@@ -348,13 +399,13 @@ function getImg () {
         $('#inBookname').val(content);
       }
       if ($('#inPublisher').val() == '') {
-        content = str.substr((str.indexOf('<li><b>o”ÅĞ:</b> ')+16),50);
+        content = str.substr((str.indexOf('<li><b>å‡ºç‰ˆç¤¾:</b> ')+16),50);
         content = content.substr(0,content.indexOf('('));
         if (content.length > 25) { content = content.substr(0,25).trim(); }
         $('#inPublisher').val(content);
       }
       if ($('#inIssuedate').val() == toDay) {
-        content = str.substr((str.indexOf('<li><b> ”­”„“úF</b> ')+17),10);
+        content = str.substr((str.indexOf('<li><b> ç™ºå£²æ—¥ï¼š</b> ')+17),10);
         content = content.replace( '</', '' );
         content = content.replace( '<', '' );
         $('#inIssuedate').val(content);
