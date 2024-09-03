@@ -1,11 +1,11 @@
 <!DOCTYPE HTML>
 <html lang="ja">
 <head>
-  <meta http-equiv="content-type" content="text/html; charset=Shift_JIS">
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <meta http-equiv="content-script-type" content="text/javascript">
   <meta http-equiv="content-style-type" content="text/css">
   <meta http-equiv="X-UA-Compatible" content="IE=Edge">
-  <title>�Ǐ������Ǘ�</title>
+  <title>読書履歴管理</title>
   <hta:application id="myapp" 
     applicationname="BOOKLOG" 
     border="thick"
@@ -24,9 +24,9 @@
         src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
   <link rel="stylesheet" type="text/css"
        href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/pepper-grinder/jquery-ui.css">
-<!-- jQuery�e�[�}�̈ꗗ
-   �Eblack-tie �Eblitzer �Ecupertino �Edark-hive �Edot-luv �Eeggplant �Eexcite-bike �Eflick �Ehot-sneaks �Ehumanity �Ele-frog �Emint-choc �Eovercast
-   �Epepper-grinder �Eredmond �Esmoothness �Esouth-street �Estart �Esunny �Eswanky-purse �Etrontastic �Eui-darkness �Eui-lightness �Evader -->
+<!-- jQueryテーマの一覧
+   ・black-tie ・blitzer ・cupertino ・dark-hive ・dot-luv ・eggplant ・excite-bike ・flick ・hot-sneaks ・humanity ・le-frog ・mint-choc ・overcast
+   ・pepper-grinder ・redmond ・smoothness ・south-street ・start ・sunny ・swanky-purse ・trontastic ・ui-darkness ・ui-lightness ・vader -->
   <link rel="stylesheet" type="text/css"
        href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" />
   <script type="text/javascript"
@@ -37,7 +37,7 @@
     src="https://raw.githubusercontent.com/padolsey/jquery.fn/master/cross-domain-ajax/jquery.xdomainajax.js"></script> 
   <script type="text/javascript">
     window.moveTo(20,20)
-    window.resizeTo(1350, 760)
+    window.resizeTo(1360, 805)
     $(function() {
       $("div#tabs").tabs({show:{effect:"fold", duration:"slow"}});
     });
@@ -55,9 +55,9 @@
       color: #ffffff;
     }
     thead, tbody { display: block; }
-    tbody {
+    tbodyscroll {
       overflow-y: scroll;
-      height: 560px;
+      height: 555px;
     }
     input, textarea {
       border: none;
@@ -69,10 +69,12 @@
 <body class="base">
   <div id="tabs">
     <ul>
-      <li><a href="#tab01">�ꗗ</a>
-      <li><a href="#tab02"><div id="lbl02">�V�K</div></a>
+      <li><a href="#tab01">表紙</a>
+      <li><a href="#tab02">一覧</a>
+      <li><a href="#tab03"><div id="lbl02">新規</div></a>
    </ul>
   <div id="tab01">
+    <br>
     <div class="table-responsive">
       <table class="table table-bordered">
         <tbody id="lst01">
@@ -80,69 +82,85 @@
       </table>
     </div>
     <div id="footer"></div>
+    <br>
   </div>
+
   <div id="tab02">
+    <div class="table-responsive">
+      <table class="table table-bordered">
+        <thead class="thead-dark">
+          <tr><th width="150px">ISBN13</th><th width="470px">書　名</th><th width="410px">著　者</th><th width="110px">入手日</th><th>　状　況</th></tr>
+        </thead>
+        <tbody id="lst02">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="tab03">
     <div class="table-responsive">
       <table class="table">
         <tr>
-          <th><div class="text-right"><span class="lab">&nbsp;ISBN13�F</span></div></th>
+          <th><div class="text-right"><span class="lab">&nbsp;ISBN13：</span></div></th>
           <td style="vertical-align: middle;"><input id="inIsbn13" type="text" value="9784000000000" maxlength="13" size="16" required pattern="^[0-9]*$"></td>
-          <th style="vertical-align: middle;"><div class="text-right"><div id="acIsbn10"><a href="https://www.amazon.co.jp/dp/" target="_blank">ISBN10�F</a></div></div></th>
+          <th style="vertical-align: middle;"><div class="text-right"><div id="acIsbn10"><a href="https://www.amazon.co.jp/dp/" target="_blank">ISBN10：</a></div></div></th>
           <td style="vertical-align: middle;"><input id="inIsbn10" type="text" value="4000000000" maxlength="10" size="12" pattern="^[0-9]*$"></td>
-          <th style="vertical-align: middle;"><div class="text-right"><a href="#" onclick="getImg ();">�\�@���F</a></td></div></th>
+          <th style="vertical-align: middle;"><div class="text-right"><a href="#" onclick="getImg ();">表　紙：</a></td></div></th>
           <td style="vertical-align: middle;" colspan=2><input id="inCoverimg" type="text" maxlength="41" size="46" value=".jpg"></td>
         </tr>
         <tr>
-          <th><div class="text-right"><span class="lab">&nbsp;���@���F</span></div></th>
+          <th><div class="text-right"><span class="lab">&nbsp;書　名：</span></div></th>
           <td style="vertical-align: middle;" colspan=3><input id="inBookname" type="text" maxlength="50" size="64" value="" required></td>
-          <th style="vertical-align: middle;"><div class="text-right">��@���F</div></th>
+          <th style="vertical-align: middle;"><div class="text-right">状　況：</div></th>
           <td style="vertical-align: middle;">
             <select id="inState">
-              <option value="0" selected>����</option>
-              <option value="1">�Ǘ�</option>
-              <option value="2">�Ǐ���</option>
-            </select></td>
+              <option value="0">未読</option>
+              <option value="1">読書中</option>
+              <option value="2">読了</option>
+            </select>
+          </td>
           <td rowspan=8 align="center"><div id="scrImage"></div></td>
         </tr>
         <tr>
-          <th><div class="text-right">���@�ҁF</div></th>
+          <th><div class="text-right">著　者：</div></th>
           <td colspan=3><input id="inAuthor" type="text" maxlength="25" size="64" value=""></td>
-          <th><div class="text-right">���@�ށF</div></th><td><input id="inGenre" type="text" maxlength="25" size="14" value=""></td>
+          <th><div class="text-right">分　類：</div></th>
+          <td><input id="inGenre" type="text" maxlength="25" size="14" value=""></td>
         </tr>
         <tr>
-          <th><div class="text-right">�o�ŎЁF</div></th>
+          <th><div class="text-right">出版社：</div></th>
           <td colspan=3><input id="inPublisher" type="text" maxlength="25" size="64" value=""></td>
-          <th><div class="text-right">���@�L�F</div></th>
+          <th><div class="text-right">所　有：</div></th>
           <td><input type="radio" name="inOwnership" id="inOwnership1" value="1" checked /> Yes&nbsp;&nbsp;
               <input type="radio" name="inOwnership" id="inOwnership0" value="0" /> No</td>
         </tr>
         <tr>
-          <th style="vertical-align: middle;"><div class="text-right">���s���F</div></th>
+          <th style="vertical-align: middle;"><div class="text-right">発行日：</div></th>
           <td style="vertical-align: middle;"><input id="inIssuedate" type="text" pattern="yyyy/MM/dd" value="2019/01/26" maxlength="10" size="11"></td>
-          <th style="vertical-align: middle; white-space: nowrap;"><div class="text-right"><span class="lab">&nbsp;������F</span></div></th>
+          <th style="vertical-align: middle; white-space: nowrap;"><div class="text-right"><span class="lab">&nbsp;入手日：</span></div></th>
           <td style="vertical-align: middle;"><input id="inGetdate" type="text" required pattern="yyyy/MM/dd" value="2019/01/26" maxlength="10" size="11"></td>
-          <th style="vertical-align: middle; white-space: nowrap;"><div class="text-right">�Ǘ����F</div></th>
+          <th style="vertical-align: middle; white-space: nowrap;"><div class="text-right">読了日：</div></th>
           <td style="vertical-align: middle;"><input id="inReaddate" type="text" pattern="yyyy/MM/dd" value="2019/01/26" maxlength="10" size="11"></td>
         </tr>
         <tr>
-          <th style="white-space: nowrap;"><div class="text-right">�}���فE���X�F</div></th>
+          <th style="white-space: nowrap;"><div class="text-right">図書館・書店：</div></th>
           <td colspan=3><input id="inLibrary" type="text" maxlength="25" size="64" value=""></td>
-          <th><div class="text-right">���@�i�F</div></th>
-          <td><input id="inPurchase" type="text" maxlength="7" size="5" value="0" pattern="^[0-9]*$" title="����"></td>
+          <th><div class="text-right">価　格：</div></th>
+          <td><input id="inPurchase" type="text" maxlength="7" size="5" value="0" pattern="^[0-9]*$" title="数字"></td>
         </tr>
         <tr>
-          <th><div class="text-right">�T�@�v�F</div></th>
+          <th><div class="text-right">概　要：</div></th>
           <td colspan=5><input id="inOverview" type="text" maxlength="255" size="99" value=""></td>
         </tr>
         <tr>
-          <th><div class="text-right">���@�z�F</div></th>
+          <th><div class="text-right">感　想：</div></th>
           <td colspan=5><textarea id="inImpressions" cols="103" rows="4" class="inpbox"></textarea></td>
         </tr>
       </table>
-      <button id="insert" name="insert" onClick="insRec()" value="insert" class="btn btn-success" />�o�^����</button>
-      <button id="update" name="update" onClick="updRec()" value="update" class="btn btn-success" />�X�V����</button>
-      <button id="delete" name="delete" onClick="delRec()" value="delete" formaction="delete" class="btn btn-danger" />�폜����</button>
-      <button id="clear" name="clear" onClick="clrScr()" value="clear" class="btn btn-info" />�V�K���</button>
+      <button id="insert" name="insert" onClick="insRec()" value="insert" class="btn btn-success" style="margin: 19px 0px 19px 0px;" />登録する</button>
+      <button id="update" name="update" onClick="updRec()" value="update" class="btn btn-success" style="margin: 18px 0px 18px 0px;" />更新する</button>
+      <button id="delete" name="delete" onClick="delRec()" value="delete" formaction="delete" class="btn btn-danger" style="margin: 18px 0px 18px 0px;" />削除する</button>
+      <button id="clear" name="clear" onClick="clrScr()" value="clear" class="btn btn-info" style="margin: 18px 0px 18px 0px;" />新規画面</button>
     </div>
   </div>
   <script>
